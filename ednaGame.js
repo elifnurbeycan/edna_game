@@ -11,10 +11,10 @@ if (canvas) {
 
         // =========== OYUN OBJELERİ / DEĞİŞKENLERİ ===========
         let player = {
-            x: 100,
-            y: 100, // Oyuncunun başlangıç Y konumunu biraz yukarı aldık
-            width: 40,
-            height: 70,
+            x: 50, // Başlangıç X konumunu ilk sütun (0 piksel) olarak ayarladık
+            y: (8 * 40) - 70 - 5, // Başlangıç Y konumunu 8. satırın üzerine, 5 piksel yukarıda ayarladık (320 - 70 - 5 = 245)
+            width: 40,  // Karakter görseline göre 40 piksel genişlik
+            height: 70, // Karakter görseline göre 70 piksel yükseklik
             speed: 3,
             dy: 0,
             gravity: 0.5,
@@ -22,31 +22,48 @@ if (canvas) {
             isOnGround: false
         };
 
-        // NOT: Artık 'ground' objesini direkt olarak kullanmayacağız, seviye yapısı üzerinden gelecek.
-        // let ground = { ... }; // Bu satır kaldırıldı.
+        // Kapı objesi (red_door.png: 40x80)
+        let door = {
+            x: 0, // draw() fonksiyonunda level dizisinden alınacak
+            y: 0, // draw() fonksiyonunda level dizisinden alınacak
+            width: 40, // Genişliği 40 piksel
+            height: 80, // Yüksekliği 80 piksel (iki tileSize bloğu)
+            isOpen: false // Kapının başlangıç durumu: Kapalı
+        };
+
+        // Buton objesi (red_button.png: 40x15, red_button_pressed: 40x3)
+        let button = {
+            x: 0, // draw() fonksiyonunda level dizisinden alınacak
+            y: 0, // draw() fonksiyonunda level dizisinden alınacak
+            width: 40, // Genişliği 40 piksel
+            height: 15, // Normal butonun yüksekliği 15 piksel (çarpışma için kullanılacak)
+            isPressed: false // Butonun başlangıç durumu: Basılmamış
+        };
 
         // =========== SEVİYE YAPISI ===========
         const tileSize = 40; // Her bir blok/karenin piksel boyutu
 
-        // Bu level dizisi, yüklediğiniz 800x480 piksel boyutundaki seviye1.png görselinin
-        // 40x40 piksellik bloklarına göre manuel olarak eşleştirilmiştir.
+        // Bu level dizisi, yüklediğiniz 800x480 piksel boyutundaki seviye1.png görseliniz ve
+        // sizin belirttiğiniz yerleşimlere göre güncellenmiştir.
         // Her '#' bir katı bloğu (zemin/duvar), her ' ' bir boş alanı temsil eder.
+        // 'D' kapının üst bloğu, 'd' kapının alt bloğu (görsel devamı)
+        // 'B' butonun konumu
         const level = [
             "####################", // Satır 0 - Üst duvar/tavan
             "####################", // Satır 1 - Üst duvar/tavan devamı
             "##         #########", // Satır 2
-            "##                 #", // Satır 3
-            "#                  #", // Satır 4 - Görseldeki orta-üst platformun üst kısmı
-            "#        ###########", // Satır 5 - Orta-üst platformun alt kısmı
-            "#        ###########", // Satır 6
+            "##          D      #", // Satır 3 - Kapı (D) yeni konumunda
+            "#           d      #", // Satır 4 - Kapının alt bloğu (d) yeni konumunda
+            "#        ###########", // Satır 5 - Orta-üst platformun üst kısmı
+            "#        ###########", // Satır 6 - Orta-üst platformun alt kısmı
             "#     ##############", // Satır 7 - Görseldeki büyük orta zemin bloğu
             "#     #######      #", // Satır 8 - Büyük orta zemin bloğunun devamı
-            "####               #", // Satır 9 - Bu satırda boşluk bırakıldı (karakterin düşebilmesi için)
+            "####              B#", // Satır 9 - Buton (B) yeni konumunda
             "####             ###", // Satır 10 - Görseldeki sol alt platform
             "####################"  // Satır 11 - En alt zemin/duvar
         ];
 
-        // Bu kısımlar 800x480 görseline göre otomatik olarak doğru olacaktır:
+        // Seviyenin toplam piksel boyutları
         const levelWidth = level[0].length * tileSize;  // 20 * 40 = 800
         const levelHeight = level.length * tileSize;    // 12 * 40 = 480
 
@@ -64,28 +81,25 @@ if (canvas) {
         backgroundImage.onload = () => console.log('Seviye arka plan görseli başarıyla yüklendi!');
         backgroundImage.onerror = () => console.error('Seviye arka plan görseli yüklenemedi! Dosya yolunu veya adını kontrol edin: ' + backgroundImage.src);
 
-        // YENİ EKLENECEK GÖRSELLER: Kapı ve Buton (Verilen boyutlara göre güncellendi)
         const doorClosedImage = new Image();
-        doorClosedImage.src = 'resimler/red_door.png'; // Dosya adı güncellendi
+        doorClosedImage.src = 'resimler/red_door.png';
         doorClosedImage.onload = () => console.log('Kapalı kapı görseli başarıyla yüklendi!');
         doorClosedImage.onerror = () => console.error('Kapalı kapı görseli yüklenemedi! Dosya yolunu veya adını kontrol edin: ' + doorClosedImage.src);
 
         const doorOpenImage = new Image();
-        doorOpenImage.src = 'resimler/red_door_opened.png'; // Dosya adı güncellendi
+        doorOpenImage.src = 'resimler/red_door_opened.png';
         doorOpenImage.onload = () => console.log('Açık kapı görseli başarıyla yüklendi!');
         doorOpenImage.onerror = () => console.error('Açık kapı görseli yüklenemedi! Dosya yolunu veya adını kontrol edin: ' + doorOpenImage.src);
 
         const buttonNormalImage = new Image();
-        buttonNormalImage.src = 'resimler/red_button.png'; // Dosya adı güncellendi
+        buttonNormalImage.src = 'resimler/red_button.png';
         buttonNormalImage.onload = () => console.log('Normal buton görseli başarıyla yüklendi!');
         buttonNormalImage.onerror = () => console.error('Normal buton görseli yüklenemedi! Dosya yolunu veya adını kontrol edin: ' + buttonNormalImage.src);
 
         const buttonPressedImage = new Image();
-        buttonPressedImage.src = 'resimler/red_button_pressed.png'; // Dosya adı güncellendi
+        buttonPressedImage.src = 'resimler/red_button_pressed.png';
         buttonPressedImage.onload = () => console.log('Basılı buton görseli başarıyla yüklendi!');
         buttonPressedImage.onerror = () => console.error('Basılı buton görseli yüklenemedi! Dosya yolunu veya adını kontrol edin: ' + buttonPressedImage.src);
-
-        
 
 
         // =========== KLAVYE GİRDİ YÖNETİMİ ===========
@@ -131,9 +145,10 @@ if (canvas) {
             // Oyuncunun yeni yatay konumu ile seviyedeki katı blokları kontrol et
             for (let row = 0; row < level.length; row++) {
                 for (let col = 0; col < level[row].length; col++) {
-                    // Sadece katı bloklarla çarpışma kontrolü yapıyoruz
-                    if (level[row][col] === '#') {
-                        // Bloğun Canvas üzerindeki piksel koordinatlarını hesapla
+                    const tileType = level[row][col];
+                    // Kapının üst bloğu 'D' ve normal katı blok '#' ile çarpışma kontrolü
+                    // Kapı kapalıysa 'D' ile çarpış, 'd' (kapının altı) ile çarpışma yok
+                    if (tileType === '#' || (tileType === 'D' && !door.isOpen)) {
                         const block = {
                             x: col * tileSize,
                             y: row * tileSize,
@@ -141,17 +156,12 @@ if (canvas) {
                             height: tileSize
                         };
 
-                        // Oyuncu ile mevcut blok arasında çarpışma var mı?
                         if (checkCollision(player, block)) {
-                            // Çarpışma varsa, oyuncuyu önceki X konumuna geri it
                             player.x = prevPlayerX;
-                            // Buraya yatay hız sıfırlama (player.dx kullanılsaydı) gelebilir.
-                            // player.dx = 0;
                         }
                     }
                 }
             }
-
 
             // --- Dikey Hareket (Yerçekimi ve Zıplama) ---
             let prevPlayerY = player.y; // Dikey çarpışma çözümü için önceki Y konumunu kaydet
@@ -164,7 +174,10 @@ if (canvas) {
             // Oyuncunun yeni dikey konumu ile seviyedeki katı blokları kontrol et
             for (let row = 0; row < level.length; row++) {
                 for (let col = 0; col < level[row].length; col++) {
-                    if (level[row][col] === '#') {
+                    const tileType = level[row][col];
+                    // Kapının üst bloğu 'D' ve normal katı blok '#' ile çarpışma kontrolü
+                    // Kapı kapalıysa 'D' ile çarpış, 'd' (kapının altı) ile çarpışma yok
+                    if (tileType === '#' || (tileType === 'D' && !door.isOpen)) {
                         const block = {
                             x: col * tileSize,
                             y: row * tileSize,
@@ -172,75 +185,152 @@ if (canvas) {
                             height: tileSize
                         };
 
-                        // Oyuncu ile mevcut blok arasında çarpışma var mı?
                         if (checkCollision(player, block)) {
                             // Eğer yukarıdan aşağıya doğru çarpışıyorsak (yani oyuncu bloğun üzerine düşüyorsa)
-                            // Oyuncunun bir önceki alt kenarı bloğun üst kenarının üzerindeyse
                             if (prevPlayerY + player.height <= block.y) {
                                 player.y = block.y - player.height; // Oyuncuyu bloğun tam üzerine sabitle
                                 player.dy = 0; // Dikey hızı sıfırla
                                 player.isOnGround = true; // Yerde olduğunu işaretle
                             }
                             // Eğer aşağıdan yukarıya doğru çarpışıyorsak (yani oyuncu bloğun altına vuruyorsa)
-                            // Oyuncunun bir önceki üst kenarı bloğun alt kenarının altındaysa
                             else if (prevPlayerY >= block.y + block.height) {
                                 player.y = block.y + block.height; // Oyuncuyu bloğun altına sabitle
-                                player.dy = 0; // Dikey hızı sıfırla (burada zıplama gücünü de sıfırlayabiliriz)
+                                player.dy = 0; // Dikey hızı sıfırla
                             }
-                            // Not: Yan çarpmalar zaten yatay çarpışma kontrolünde çözülmeliydi.
-                            // Bu kısım sadece dikey çözümü sağlar.
                         }
                     }
                 }
             }
 
-
             // --- Zıplama ---
-            // Boşluk (Space) tuşuna basılıysa ve oyuncu yerdeyse zıpla
             if (pressedKeys['ArrowUp'] && player.isOnGround) {
                 player.dy = player.jumpPower;
                 player.isOnGround = false;
             }
 
-            // --- Canvas Sınırları (Güvenlik için, normalde seviye sınırları daha önemlidir) ---
-            // Oyuncunun Canvas'ın altından düşmesini engelle (eğer seviye bitiyorsa ölüm bölgesi olur)
+            // --- Buton Etkileşimi ---
+            // Butonun konumu draw() fonksiyonunda ayarlandığı için burada doğrudan kullanabiliriz.
+            // Ancak button objesinin y konumu 40x40'lık bloğun üstünden ayarlı olduğu için
+            // gerçek görsel yüksekliğini de hesaba katarak çarpışma kontrolü yapalım.
+            const actualButtonRect = {
+                x: button.x,
+                y: button.y + tileSize - buttonNormalImage.naturalHeight, // Buton görselinin gerçek y konumu
+                width: button.width,
+                height: buttonNormalImage.naturalHeight // Butonun normal yüksekliği
+            };
+
+            if (checkCollision(player, actualButtonRect)) { // Butonun gerçek dikdörtgeni ile çarpışma
+                if (pressedKeys['KeyE']) { // 'E' tuşu ile etkileşim
+                    button.isPressed = true;
+                    door.isOpen = true; // Butona basıldığında kapıyı aç
+                    console.log("Butona basıldı, kapı açıldı!");
+                }
+            } else {
+                // Oyuncu butondan ayrıldığında butonun basılı halden çıkmasını istiyorsak:
+                button.isPressed = false;
+                // Eğer kapının da kapanmasını isterseniz:
+                // door.isOpen = false;
+            }
+
+            // --- Canvas Sınırları (En sona taşındı) ---
             if (player.y + player.height > canvas.height) {
                 player.y = canvas.height - player.height;
                 player.dy = 0;
                 player.isOnGround = true;
             }
-        }
+            if (player.x < 0) {
+                player.x = 0;
+            }
+            if (player.x + player.width > canvas.width) {
+                player.x = canvas.width - player.width;
+            }
+        } // update() fonksiyonunun kapanış parantezi
+
 
         function draw() {
             ctx.clearRect(0, 0, canvas.width, canvas.height);
 
-        // YÜKLENEN ARKA PLAN GÖRSELİNİ ÇİZ
-        // Görsel yüklendiyse seviye1.png'yi çiz, yoksa geçici mavi arka planı kullan
             if (backgroundImage.complete && backgroundImage.naturalWidth !== 0) {
-            // Canvas boyutlarınız HTML'de 800x600 olarak ayarlıydı, ancak kodda 800x480'e küçültülüyor.
-            // seviye1.png'nizin 800x480 piksel boyutunda olduğundan emin olun.
                 ctx.drawImage(backgroundImage, 0, 0, canvas.width, canvas.height);
             } else {
-            // Eğer görsel yüklenemezse veya henüz yüklenmediyse yedek olarak mavi arka planı çiz
-                ctx.fillStyle = '#87CEEB'; // Açık mavi gökyüzü
+                ctx.fillStyle = '#87CEEB';
                 ctx.fillRect(0, 0, canvas.width, canvas.height);
             }
 
+            for (let row = 0; row < level.length; row++) {
+                for (let col = 0; col < level[row].length; col++) {
+                    const tileType = level[row][col];
+                    const x = col * tileSize;
+                    const y = row * tileSize;
 
-        // Seviyedeki görünmez çarpışma bloklarını işle (eğer `#` sadece çarpışma içinse görseli çizme)
-        // ÖNEMLİ: Eğer seviye1.png zaten zemini ve duvarları içeriyorsa,
-        // buradaki 'if (tileType === '#')' bloğunun içindeki 'ctx.fillRect' satırlarını SİLİN!
-        // Aksi takdirde, arka plan görselinizin üzerine tekrar gri kareler çizilir.
-            
+                    // Kapı çizimi
+                    if (tileType === 'D') {
+                        // Kapının konumunu burada güncelle.
+                        // Yüksekliği 80 olduğu için, çizim y koordinatını üst bloğun y'sinden başlatırız.
+                        door.x = x;
+                        door.y = y; // D (üst blok) konumunu al
 
-    // ... (Oyuncuyu çizme kısmı zaten doğru, dokunmayın)
-    if (playerImage.complete && playerImage.naturalWidth !== 0) {
-        ctx.drawImage(playerImage, player.x, player.y, player.width, player.height);
-    } else {
-        ctx.fillStyle = 'blue';
-        ctx.fillRect(player.x, player.y, player.width, player.height);
-    }
-}
+                        if (door.isOpen) {
+                            if (doorOpenImage.complete && doorOpenImage.naturalWidth !== 0) {
+                                // Açık kapı 40x5 olduğu için, kapının üst bloğunun y'sinden (x,y) itibaren çiziyoruz
+                                // Bu, kapının açıldığında ince bir boşluk gibi görünmesini sağlar.
+                                ctx.drawImage(doorOpenImage, x, y, doorOpenImage.naturalWidth, doorOpenImage.naturalHeight);
+                            } else {
+                                ctx.fillStyle = 'green'; // Yedek renk
+                                ctx.fillRect(x, y + tileSize - 5, tileSize, 5); // Açık kapı için ince bir çizgi
+                            }
+                        } else {
+                            if (doorClosedImage.complete && doorClosedImage.naturalWidth !== 0) {
+                                // Kapalı kapı 40x80 olduğu için, D bloğunun y'sinden başlayarak 80 yüksekliğinde çizilir
+                                ctx.drawImage(doorClosedImage, x, y, door.width, door.height);
+                            } else {
+                                ctx.fillStyle = 'darkred';
+                                ctx.fillRect(x, y, tileSize, tileSize * 2); // Yedek renk için iki blok doldur
+                            }
+                        }
+                    }
+                    // Kapının alt bloğu (görselin devamı, çarpışma yok)
+                    else if (tileType === 'd') {
+                        // Bu bloğa herhangi bir çizim yapmayız, sadece D bloğu kapının tamamını çizer.
+                        // Amaç, level dizisinde kapının kapladığı alanı işaretlemek.
+                    }
+                    // Buton çizimi
+                    else if (tileType === 'B') {
+                        // Butonun konumunu burada güncelle.
+                        // Buton görseli daha küçük olduğu için 40x40'lık kutunun altına yaslayarak çizelim.
+                        button.x = x;
+                        button.y = y;
+
+                        if (button.isPressed) {
+                            if (buttonPressedImage.complete && buttonPressedImage.naturalWidth !== 0) {
+                                // Basılı buton 40x3. 40x40'lık bloğun altına yaslayalım.
+                                ctx.drawImage(buttonPressedImage, x, y + tileSize - buttonPressedImage.naturalHeight, buttonPressedImage.naturalWidth, buttonPressedImage.naturalHeight);
+                            } else {
+                                ctx.fillStyle = 'lightgray'; // Yedek renk
+                                ctx.fillRect(x, y + tileSize - 3, tileSize, 3); // Basılı buton için ince bir çizgi
+                            }
+                        } else {
+                            if (buttonNormalImage.complete && buttonNormalImage.naturalWidth !== 0) {
+                                // Normal buton 40x15. 40x40'lık bloğun altına yaslayalım.
+                                ctx.drawImage(buttonNormalImage, x, y + tileSize - buttonNormalImage.naturalHeight, buttonNormalImage.naturalWidth, buttonNormalImage.naturalHeight);
+                            } else {
+                                ctx.fillStyle = 'gray'; // Yedek renk
+                                ctx.fillRect(x, y + tileSize - 15, tileSize, 15); // Normal buton için
+                            }
+                        }
+                    }
+                    // Diğer tile tipleri (örn: '#') için çizim yapmıyoruz, arka plan görseli kullanılıyor.
+                }
+            }
+
+            // Oyuncuyu çizme kısmı
+            if (playerImage.complete && playerImage.naturalWidth !== 0) {
+                ctx.drawImage(playerImage, player.x, player.y, player.width, player.height);
+            } else {
+                ctx.fillStyle = 'blue';
+                ctx.fillRect(player.x, player.y, player.width, player.height);
+            }
+        }
 
         // Ana oyun döngüsü fonksiyonu
         function gameLoop() {
