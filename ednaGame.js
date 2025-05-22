@@ -11,8 +11,8 @@ if (canvas) {
 
         // =========== OYUN OBJELERİ / DEĞİŞKENLERİ ===========
         let player = {
-            x: 50, // Başlangıç X konumunu ilk sütun (0 piksel) olarak ayarladık
-            y: (8 * 40) - 70 - 5, // Başlangıç Y konumunu 8. satırın üzerine, 5 piksel yukarıda ayarladık (320 - 70 - 5 = 245)
+            x: 50, // Karakterin yatay (X) başlangıç pozisyonu
+            y: (8 * 40) - 70 - 5, // Karakterin dikey (Y) başlangıç pozisyonu (8. satırın zemini üzerine, 5 piksel yukarıda)
             width: 40,  // Karakter görseline göre 40 piksel genişlik
             height: 70, // Karakter görseline göre 70 piksel yükseklik
             speed: 3,
@@ -208,10 +208,7 @@ if (canvas) {
                 player.isOnGround = false;
             }
 
-            // --- Buton Etkileşimi ---
-            // Butonun konumu draw() fonksiyonunda ayarlandığı için burada doğrudan kullanabiliriz.
-            // Ancak button objesinin y konumu 40x40'lık bloğun üstünden ayarlı olduğu için
-            // gerçek görsel yüksekliğini de hesaba katarak çarpışma kontrolü yapalım.
+            // --- Buton Etkileşimi (Güncellenmiş Mantık: 'E' tuşu olmadan) ---
             const actualButtonRect = {
                 x: button.x,
                 y: button.y + tileSize - buttonNormalImage.naturalHeight, // Buton görselinin gerçek y konumu
@@ -219,20 +216,17 @@ if (canvas) {
                 height: buttonNormalImage.naturalHeight // Butonun normal yüksekliği
             };
 
-            if (checkCollision(player, actualButtonRect)) { // Butonun gerçek dikdörtgeni ile çarpışma
-                if (pressedKeys['KeyE']) { // 'E' tuşu ile etkileşim
-                    button.isPressed = true;
-                    door.isOpen = true; // Butona basıldığında kapıyı aç
-                    console.log("Butona basıldı, kapı açıldı!");
-                }
-            } else {
-                // Oyuncu butondan ayrıldığında butonun basılı halden çıkmasını istiyorsak:
-                button.isPressed = false;
-                // Eğer kapının da kapanmasını isterseniz:
-                // door.isOpen = false;
+            if (checkCollision(player, actualButtonRect)) { // Oyuncu buton ile çarpışıyorsa
+                button.isPressed = true; // Buton basılı hale gelsin
+                door.isOpen = true;      // Kapı açılsın
+                // console.log("Oyuncu butona geldi, buton basıldı, kapı açıldı!"); // Hata ayıklama için
+            } else { // Oyuncu buton ile çarpışmıyorsa (üzerinden çekildiyse)
+                button.isPressed = false; // Buton normal haline dönsün
+                door.isOpen = false;      // Kapı kapansın
+                // console.log("Oyuncu butondan ayrıldı, buton normal, kapı kapandı."); // Hata ayıklama için
             }
 
-            // --- Canvas Sınırları (En sona taşındı) ---
+            // --- Canvas Sınırları ---
             if (player.y + player.height > canvas.height) {
                 player.y = canvas.height - player.height;
                 player.dy = 0;
@@ -356,3 +350,4 @@ if (canvas) {
 } else {
     console.error('ID "ednaCanvas" olan canvas elementi bulunamadı! HTML dosyasını kontrol edin.');
 }
+
