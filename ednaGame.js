@@ -12,32 +12,25 @@ if (canvas) {
         // =========== OYUN OBJELERİ / DEĞİŞKENLERİ ===========
         const tileSize = 40; // Her bir blok/karenin piksel boyutu
 
-        let player = {
-            x: 0, // Başlangıç konumu initializeCharacterPositionsForCurrentLevel() tarafından ayarlanacak
-            y: 0, // Başlangıç konumu initializeCharacterPositionsForCurrentLevel() tarafından ayarlanacak
-            width: 40,  // Karakter görseline göre 40 piksel genişlik
-            height: 70, // Karakter görseline göre 70 piksel yükseklik
-            speed: 3,
-            dy: 0,
-            gravity: 0.5,
-            jumpPower: -10,
-            isOnGround: false
-        };
+        // Karakter şablonu
+        function createCharacter(x, y) {
+            return {
+                x: x,
+                y: y,
+                width: 40,
+                height: 70,
+                speed: 3,
+                dy: 0,
+                gravity: 0.5,
+                jumpPower: -10,
+                isOnGround: false
+            };
+        }
 
-        let player2 = {
-            x: 0, // Başlangıç konumu initializeCharacterPositionsForCurrentLevel() tarafından ayarlanacak
-            y: 0, // Başlangıç konumu initializeCharacterPositionsForCurrentLevel() tarafından ayarlanacak
-            width: 40, // Player 1 ile aynı boyutta
-            height: 70, // Player 1 ile aynı boyutta
-            speed: 3,
-            dy: 0,
-            gravity: 0.5,
-            jumpPower: -10,
-            isOnGround: false
-        };
+        let player; // Ana karakter
+        let allPlayableCharacters = []; // Tüm oynanabilir karakterleri tutan dizi
 
-        // Hangi karakterin aktif olduğunu tutan değişken
-        let activePlayer = player; // Başlangıçta ana karakter aktif
+        let activePlayer; // Şu anda kontrol edilen karakter objesi
 
         // Kapı objesi (red_door.png: 40x80)
         let door = {
@@ -85,17 +78,18 @@ if (canvas) {
                 "####################"  // Satır 11 - En alt zemin/duvar
             ],
             // Seviye 2 (index 1) - Örnek bir seviye 2 düzeni, kendi tasarımınızı buraya çizebilirsiniz
+            // Buraya birden fazla 'Q' ekleyerek test edebilirsiniz.
             [
                 "####################",
+                "####Q          #####",
+                "####           #####",
                 "######         #####",
-                "######         #####",
-                "######  ###  #######",
+                "#         #   B#####",
                 "#       ###  #######",
                 "#       ###  #######",
-                "#       ###  #######",
-                "#       ###  #     #", // Buton
-                "#     #####  #     #", // Kapı üstü
-                "#     #####    #####", // Kapı altı ve Çıkış Kapısı
+                "#       ###  #    X#", 
+                "#Q    #####  #     #", 
+                "#    P#####  D #####", 
                 "####  #####    #####",
                 "####################"
             ]
@@ -114,11 +108,11 @@ if (canvas) {
         // Karakterlerin başlangıç konumlarını mevcut level dizisinden al
         // ve level dizisindeki 'P' ve 'Q' karakterlerini boşlukla değiştir
         function initializeCharacterPositionsForCurrentLevel() {
-            let playerFound = false;
-            let player2Found = false;
+            allPlayableCharacters = []; // Her seviye başında karakterleri sıfırla
+            player = null; // Ana karakteri sıfırla
 
             // Mevcut seviye verisinin değiştirilebilir bir kopyasını oluştur
-            let tempLevelRows = allLevels[currentLevelIndex].map(row => row.split('')); // currentLevelIndex'ten al
+            let tempLevelRows = allLevels[currentLevelIndex].map(row => row.split(''));
 
             for (let row = 0; row < tempLevelRows.length; row++) {
                 for (let col = 0; col < tempLevelRows[row].length; col++) {
@@ -126,19 +120,14 @@ if (canvas) {
                     const x = col * tileSize;
                     const y = row * tileSize; // Tile'ın üst sol köşesinin y koordinatı
 
-                    if (tileChar === 'P' && !playerFound) {
-                        player.x = x;
-                        player.y = y - player.height + tileSize - 1; // Karakteri tile'ın üzerine 1 piksel yukarıda yerleştir
-                        player.dy = 0; // Hızı sıfırla
-                        player.isOnGround = false;
-                        playerFound = true;
+                    if (tileChar === 'P') {
+                        const newPlayer = createCharacter(x, y - createCharacter().height + tileSize - 1);
+                        allPlayableCharacters.push(newPlayer);
+                        player = newPlayer; // Ana karakter referansını ata
                         tempLevelRows[row][col] = ' '; // Başlangıç noktasını boşluk yap
-                    } else if (tileChar === 'Q' && !player2Found) {
-                        player2.x = x;
-                        player2.y = y - player2.height + tileSize - 1; // Karakteri tile'ın üzerine 1 piksel yukarıda yerleştir
-                        player2.dy = 0; // Hızı sıfırla
-                        player2.isOnGround = false;
-                        player2Found = true;
+                    } else if (tileChar === 'Q') {
+                        const newSideCharacter = createCharacter(x, y - createCharacter().height + tileSize - 1);
+                        allPlayableCharacters.push(newSideCharacter);
                         tempLevelRows[row][col] = ' '; // Başlangıç noktasını boşluk yap
                     }
                 }
@@ -146,19 +135,13 @@ if (canvas) {
             // Global 'level' dizisini işlenmiş haliyle güncelle (P/Q kaldırıldı)
             level = tempLevelRows.map(row => row.join(''));
 
-            // Eğer P veya Q yeni seviyede bulunamazsa, onları varsayılan güvenli bir yere yerleştir
-            if (!playerFound) {
-                player.x = 4 * tileSize;
-                player.y = (9 * tileSize) - 70 - 1; // 'P' bulunamazsa varsayılan geri dönüş
-                player.dy = 0;
-                player.isOnGround = false;
+            // Eğer ana karakter bulunamazsa varsayılan bir konum ata
+            if (!player) {
+                player = createCharacter(4 * tileSize, (9 * tileSize) - 70 - 1);
+                allPlayableCharacters.unshift(player); // Listenin başına ekle
+                console.warn("Ana karakter (P) seviyede bulunamadı, varsayılan konuma yerleştirildi.");
             }
-            if (!player2Found) {
-                player2.x = 10 * tileSize;
-                player2.y = (5 * tileSize) - 70 - 1; // 'Q' bulunamazsa varsayılan geri dönüş
-                player2.dy = 0;
-                player2.isOnGround = false;
-            }
+            
             activePlayer = player; // Seviye değişiminde kontrolü her zaman player 1'e geri ver
         }
 
@@ -170,7 +153,6 @@ if (canvas) {
                 console.log("Tüm seviyeler tamamlandı, başa dönülüyor!");
             }
             // Yeni seviyenin harita verilerini 'level' değişkenine derinlemesine kopyala
-            // böylece P/Q karakterleri kaldırılabilir
             level = allLevels[currentLevelIndex].map(row => row);
             console.log(`Seviye ${currentLevelIndex + 1}'e geçildi!`);
             initializeCharacterPositionsForCurrentLevel(); // Yeni seviye için karakter konumlarını başlat
@@ -186,10 +168,10 @@ if (canvas) {
         playerImage.onload = () => console.log('Ana karakter piksel görseli başarıyla yüklendi!');
         playerImage.onerror = () => console.error('Ana karakter piksel görseli yüklenemedi! Dosya yolunu veya adını kontrol edin: ' + playerImage.src);
 
-        const player2Image = new Image();
-        player2Image.src = 'resimler/yan_karakter.png';
-        player2Image.onload = () => console.log('İkinci karakter piksel görseli başarıyla yüklendi!');
-        player2Image.onerror = () => console.error('İkinci karakter piksel görseli yüklenemedi! Dosya yolunu veya adını kontrol edin: ' + player2Image.src);
+        const sideCharacterImage = new Image(); // Tüm yan karakterler için tek görsel
+        sideCharacterImage.src = 'resimler/yan_karakter.png';
+        sideCharacterImage.onload = () => console.log('Yan karakter piksel görseli başarıyla yüklendi!');
+        sideCharacterImage.onerror = () => console.error('Yan karakter piksel görseli yüklenemedi! Dosya yolunu veya adını kontrol edin: ' + sideCharacterImage.src);
 
         const backgroundImage = new Image(); // Seviye 1 arka plan görseli
         backgroundImage.src = 'resimler/seviye1.png';
@@ -200,6 +182,21 @@ if (canvas) {
         seviye2Image.src = 'resimler/seviye2.png';
         seviye2Image.onload = () => console.log('Seviye 2 arka plan görseli başarıyla yüklendi!');
         seviye2Image.onerror = () => console.error('Seviye 2 arka plan görseli yüklenemedi! Dosya yolunu veya adını kontrol edin: ' + seviye2Image.src);
+
+        const startScreenImage = new Image(); // Giriş ekranı görseli
+        startScreenImage.src = 'resimler/giris_ekrani.png';
+        startScreenImage.onload = () => console.log('Giriş ekranı görseli başarıyla yüklendi!');
+        startScreenImage.onerror = () => console.error('Giriş ekranı görseli yüklenemedi! Dosya yolunu veya adını kontrol edin: ' + startScreenImage.src);
+
+        const howToPlayImage = new Image(); // Nasıl oynanır ekranı görseli
+        howToPlayImage.src = 'resimler/nasil_oynanir.png';
+        howToPlayImage.onload = () => console.log('Nasıl oynanır ekranı görseli başarıyla yüklendi!');
+        howToPlayImage.onerror = () => console.error('Nasıl oynanır ekranı görseli yüklenemedi! Dosya yolunu veya adını kontrol edin: ' + howToPlayImage.src);
+
+        const menuImage = new Image(); // Menü ekranı görseli
+        menuImage.src = 'resimler/menu.png';
+        menuImage.onload = () => console.log('Menü ekranı görseli başarıyla yüklendi!');
+        menuImage.onerror = () => console.error('Menü ekranı görseli yüklenemedi! Dosya yolunu veya adını kontrol edin: ' + menuImage.src);
 
 
         const doorClosedImage = new Image();
@@ -243,8 +240,46 @@ if (canvas) {
         let lastZPressTime = 0; // 'Z' tuşuna en son basıldığı zamanı tutar
         const zCooldown = 200; // 'Z' tuşu için milisaniye cinsinden bekleme süresi
 
+        // Oyunun başlangıç durumu
+        let gameState = 'startScreen'; // 'startScreen', 'howToPlayScreen', 'playing', 'pauseMenu'
+
         window.addEventListener('keydown', (e) => {
             pressedKeys[e.code] = true;
+
+            if (e.code === 'Enter') {
+                if (gameState === 'startScreen') {
+                    gameState = 'howToPlayScreen';
+                    console.log("Giriş ekranından Nasıl Oynanır ekranına geçildi.");
+                } else if (gameState === 'howToPlayScreen') {
+                    gameState = 'playing';
+                    // Oyun başladığında ilk seviyeyi yükle ve karakter konumlarını başlat
+                    currentLevelIndex = 0; // Her zaman ilk seviyeden başla
+                    level = allLevels[currentLevelIndex].map(row => row);
+                    initializeCharacterPositionsForCurrentLevel();
+                    console.log("Oyun başladı, Seviye 1 yüklendi!");
+                }
+            } else if (e.code === 'Escape') {
+                if (gameState === 'playing') {
+                    gameState = 'pauseMenu';
+                    console.log("Oyun duraklatıldı, Menü açıldı.");
+                } else if (gameState === 'pauseMenu') {
+                    gameState = 'playing'; // Esc ile menüden oyuna dön
+                    console.log("Menü kapatıldı, Oyuna devam ediliyor.");
+                }
+            } else if (e.code === 'Digit1' && gameState === 'pauseMenu') {
+                // Menüde 1'e basılırsa oyuna devam et
+                gameState = 'playing';
+                console.log("Oyuna devam ediliyor.");
+            } else if (e.code === 'Digit2' && gameState === 'pauseMenu') {
+                // Menüde 2'ye basılırsa seviyeyi baştan başlat
+                gameState = 'playing';
+                // Mevcut seviyeyi baştan başlat
+                level = allLevels[currentLevelIndex].map(row => row); // Harita verisini sıfırla
+                initializeCharacterPositionsForCurrentLevel(); // Karakter konumlarını sıfırla
+                door.isOpen = false; // Kapıyı sıfırla
+                button.isPressed = false; // Butonu sıfırla
+                console.log(`Seviye ${currentLevelIndex + 1} baştan başlatıldı.`);
+            }
         });
 
         window.addEventListener('keyup', (e) => {
@@ -262,68 +297,83 @@ if (canvas) {
                    rect1.y + rect1.height > rect2.y;
         }
 
-        // İki karakter arasında doğrudan görüş hattı olup olmadığını kontrol eder (yatay veya dikey)
+        // Bir tile'ın (row, col) bir karakterin bounding box'ı tarafından işgal edilip edilmediğini kontrol eder.
+        function isTileOccupiedByChar(tileRow, tileCol, character) {
+            const charLeftPixel = character.x;
+            const charRightPixel = character.x + character.width;
+            const charTopPixel = character.y;
+            const charBottomPixel = character.y + character.height;
+
+            const tileLeftPixel = tileCol * tileSize;
+            const tileRightPixel = (tileCol + 1) * tileSize;
+            const tileTopPixel = tileRow * tileSize;
+            const tileBottomPixel = (tileRow + 1) * tileSize;
+
+            // Karakterin bounding box'ı ile tile'ın bounding box'ı çakışıyor mu?
+            return charLeftPixel < tileRightPixel && charRightPixel > tileLeftPixel &&
+                   charTopPixel < tileBottomPixel && charBottomPixel > tileTopPixel;
+        }
+
+        // İki karakter arasında doğrudan görüş hattı olup olmadığını kontrol eder (çapraz dahil)
         function checkLineOfSight(char1, char2) {
-            // Karakterlerin dikey aralıkları (Y koordinatları) çakışıyor mu kontrol et
-            if (char1.y < char2.y + char2.height && char1.y + char1.height > char2.y) {
-                // Yatay görüş hattı kontrolü
-                // Karakterler arasındaki sütunları kontrol et
-                const startColToCheck = Math.floor(Math.min(char1.x, char2.x) / tileSize) + 1;
-                const endColToCheck = Math.floor(Math.max(char1.x, char2.x) / tileSize);
-
-                // Kesişen dikey aralıktaki satırları kontrol et
-                const overlapYMin = Math.max(char1.y, char2.y);
-                const overlapYMax = Math.min(char1.y + char1.height, char2.y + char2.height);
-                const rowStartForOverlap = Math.floor(overlapYMin / tileSize);
-                const rowEndForOverlap = Math.ceil(overlapYMax / tileSize);
-
-                for (let row = rowStartForOverlap; row < rowEndForOverlap; row++) {
-                    for (let col = startColToCheck; col <= endColToCheck; col++) {
-                        // Tile'ın seviye sınırları içinde olduğundan emin ol
-                        if (row >= 0 && row < level.length && col >= 0 && col < level[row].length) {
-                            const tileType = level[row][col];
-                            // Eğer katı bir blok (duvar, kapalı kapı) varsa, görüş hattı engellenmiştir
-                            // Parmaklıklar ('F', 'G') görüş hattını ENGELLEMEZ.
-                            if (tileType === '#' || (tileType === 'D' && !door.isOpen)) {
-                                return false; // Engel bulundu
-                            }
-                        }
-                    }
-                }
-                return true; // Yatay görüş hattı açık
+            // Eğer char1 veya char2 yoksa, görüş hattı kontrolü yapılamaz.
+            if (!char1 || !char2) {
+                return false;
             }
 
-            // Karakterlerin yatay aralıkları (X koordinatları) çakışıyor mu kontrol et
-            if (char1.x < char2.x + char2.width && char1.x + char1.width > char2.x) {
-                // Dikey görüş hattı kontrolü
-                // Karakterler arasındaki satırları kontrol et
-                const startRowToCheck = Math.floor(Math.min(char1.y, char2.y) / tileSize) + 1;
-                const endRowToCheck = Math.floor(Math.max(char1.y, char2.y) / tileSize);
+            // Karakterlerin merkez noktalarını al
+            const x1 = char1.x + char1.width / 2;
+            const y1 = char1.y + char1.height / 2;
+            const x2 = char2.x + char2.width / 2;
+            const y2 = char2.y + char2.height / 2;
 
-                // Kesişen yatay aralıktaki sütunları kontrol et
-                const overlapXMin = Math.max(char1.x, char2.x);
-                const overlapXMax = Math.min(char1.x + char1.width, char2.x + char2.width);
-                const colStartForOverlap = Math.floor(overlapXMin / tileSize);
-                const colEndForOverlap = Math.ceil(overlapXMax / tileSize);
+            // Bresenham'ın çizgi algoritmasına benzer bir yaklaşımla aradaki tüm tile'ları kontrol et
+            let dx = Math.abs(x2 - x1);
+            let dy = Math.abs(y2 - y1);
+            let sx = (x1 < x2) ? 1 : -1;
+            let sy = (y1 < y2) ? 1 : -1;
+            let err = dx - dy;
 
-                for (let col = colStartForOverlap; col < colEndForOverlap; col++) {
-                    for (let row = startRowToCheck; row <= endRowToCheck; row++) {
-                        // Tile'ın seviye sınırları içinde olduğundan emin ol
-                        if (row >= 0 && row < level.length && col >= 0 && col < level[row].length) {
-                            const tileType = level[row][col];
-                            // Eğer katı bir blok (duvar, kapalı kapı) varsa, görüş hattı engellenmiştir
-                            // Parmaklıklar ('F', 'G') görüş hattını ENGELLEMEZ.
-                            if (tileType === '#' || (tileType === 'D' && !door.isOpen)) {
-                                return false; // Engel bulundu
-                            }
-                        }
-                    }
+            let currentX = x1;
+            let currentY = y1;
+
+            while (true) {
+                let col = Math.floor(currentX / tileSize);
+                let row = Math.floor(currentY / tileSize);
+
+                // Tile'ın seviye sınırları içinde olduğundan emin ol
+                if (row < 0 || row >= level.length || col < 0 || col >= level[row].length) {
+                    return false; // Çizgi seviye dışına çıktı, görüş hattı yok say
                 }
-                return true; // Dikey görüş hattı açık
-            }
 
-            // Eğer ne yatay ne de dikey çakışma yoksa (veya çok uzaktalarsa), görüş hattı yok demektir.
-            return false;
+                const tileType = level[row][col];
+
+                // Eğer mevcut tile, karakterlerden herhangi birinin bounding box'ı tarafından işgal ediliyorsa,
+                // bu tile'ı bir engel olarak sayma.
+                if (isTileOccupiedByChar(row, col, char1) || isTileOccupiedByChar(row, col, char2)) {
+                    // Karakterin kendi vücudunun bir parçası, engel değil.
+                }
+                // Aksi takdirde, eğer tile katı bir engel (duvar veya kapalı kapı) ise, görüş hattı engellenmiştir.
+                else if (tileType === '#' || (tileType === 'D' && !door.isOpen)) {
+                    return false; // Engel bulundu
+                }
+
+                // Hedef tile'a ulaşıldıysa döngüyü kır
+                if (Math.floor(currentX / tileSize) === Math.floor(x2 / tileSize) && Math.floor(currentY / tileSize) === Math.floor(y2 / tileSize)) {
+                    break; 
+                }
+
+                let e2 = 2 * err;
+                if (e2 > -dy) {
+                    err -= dy;
+                    currentX += sx;
+                }
+                if (e2 < dx) {
+                    err += dx;
+                    currentY += sy;
+                }
+            }
+            return true; // Engel bulunamadı, görüş hattı açık
         }
 
 
@@ -333,7 +383,6 @@ if (canvas) {
 
         // Karakterlerin fizik ve çarpışma güncellemelerini ayrı bir fonksiyonda topla
         function updateCharacterPhysics(char) {
-            let prevCharX = char.x;
             let prevCharY = char.y;
 
             // Dikey hareket (yerçekimi)
@@ -341,7 +390,29 @@ if (canvas) {
             char.dy += char.gravity;
             char.y += char.dy;
 
-            // Dikey çarpışma kontrolü
+            // --- Karakter-on-Karakter Çarpışması (Dikey) ---
+            for (let i = 0; i < allPlayableCharacters.length; i++) {
+                const otherChar = allPlayableCharacters[i];
+                if (char === otherChar) continue; // Kendisiyle çarpışmayı kontrol etme
+
+                // Eğer 'char' düşüyorsa ve 'otherChar' ile çarpışıyorsa
+                if (char.dy > 0 && checkCollision(char, otherChar)) {
+                    // Eğer karakterin önceki alt kenarı, diğer karakterin üst kenarında veya üstündeyse (yani üzerine düşüyorsa)
+                    if (prevCharY + char.height <= otherChar.y) {
+                        char.y = otherChar.y - char.height; // Diğer karakterin üzerine yerleştir
+                        char.dy = 0;
+                        char.isOnGround = true;
+                    }
+                    // Eğer düşerken diğer karakterin altından çarpıyorsa (örneğin zıplayarak)
+                    else if (prevCharY >= otherChar.y + otherChar.height) {
+                        char.y = otherChar.y + otherChar.height; // Diğer karakterin altından sektir
+                        char.dy = 0;
+                    }
+                }
+            }
+
+
+            // Dikey çarpışma kontrolü (tile'lar ile)
             for (let row = 0; row < level.length; row++) {
                 for (let col = 0; col < level[row].length; col++) {
                     const tileType = level[row][col];
@@ -386,7 +457,6 @@ if (canvas) {
         function update() {
             // Aktif oyuncunun hareketini kontrol et
             let currentPlayer = activePlayer;
-            let otherPlayer = (activePlayer === player) ? player2 : player;
 
             // Sadece aktif oyuncunun yatay hareketini al
             let prevCurrentPlayerX = currentPlayer.x;
@@ -417,9 +487,10 @@ if (canvas) {
                 currentPlayer.isOnGround = false;
             }
 
-            // Her iki karakterin de fizik ve çarpışma güncellemelerini uygula
-            updateCharacterPhysics(player);
-            updateCharacterPhysics(player2);
+            // Her karakterin fizik ve çarpışma güncellemelerini uygula
+            for (let i = 0; i < allPlayableCharacters.length; i++) {
+                updateCharacterPhysics(allPlayableCharacters[i]);
+            }
 
 
             // --- Buton Etkileşimi ---
@@ -430,34 +501,79 @@ if (canvas) {
                 height: buttonNormalImage.naturalHeight
             };
 
-            // Hem Player 1 hem de Player 2 butona basabilir
-            if (checkCollision(player, actualButtonRect) || checkCollision(player2, actualButtonRect)) {
-                button.isPressed = true;
-                door.isOpen = true;
-            } else {
-                button.isPressed = false;
-                door.isOpen = false;
+            // Tüm oynanabilir karakterler butona basabilir
+            let anyCharOnButton = false;
+            for (let i = 0; i < allPlayableCharacters.length; i++) {
+                if (checkCollision(allPlayableCharacters[i], actualButtonRect)) {
+                    anyCharOnButton = true;
+                    break;
+                }
             }
+            button.isPressed = anyCharOnButton;
+            door.isOpen = anyCharOnButton;
 
-            // --- Karakter Değiştirme Mantığı ---
+
+            // --- Karakter Değiştirme Mantığı (Z tuşu ile) ---
             const currentTime = Date.now();
             if (pressedKeys['KeyZ'] && (currentTime - lastZPressTime > zCooldown)) {
-                // Sadece aktif olmayan karakter ile aktif karakter arasında görüş hattı varsa değiş
-                if (checkLineOfSight(activePlayer, otherPlayer)) {
-                    activePlayer = otherPlayer; // Aktif karakteri değiştir
+                if (activePlayer === player) {
+                    // Ana karakterden yan karaktere geçiş yapmaya çalış
+                    let currentIndex = allPlayableCharacters.indexOf(player);
+                    let foundNextSideChar = null;
 
-                    // Kontrol değiştiğinde karakterlerin dikey hızlarını sıfırla
-                    // ve isOnGround durumunu false yap ki yerçekimi tekrar etki etsin.
-                    player.dy = 0;
-                    player.isOnGround = false;
-                    player2.dy = 0;
-                    player2.isOnGround = false;
+                    // Mevcut karakterden sonraki yan karakterleri ara
+                    for (let i = currentIndex + 1; i < allPlayableCharacters.length; i++) {
+                        const char = allPlayableCharacters[i];
+                        if (char !== player && checkLineOfSight(player, char)) {
+                            foundNextSideChar = char;
+                            break;
+                        }
+                    }
 
-                    console.log("Karakter kontrolü değiştirildi!");
+                    // Eğer sonraki bulunamazsa, baştan itibaren ara (ana karakteri atla)
+                    if (!foundNextSideChar) {
+                        for (let i = 0; i < currentIndex; i++) {
+                            const char = allPlayableCharacters[i];
+                            if (char !== player && checkLineOfSight(player, char)) {
+                                foundNextSideChar = char;
+                                break;
+                            }
+                        }
+                    }
+
+                    if (foundNextSideChar) {
+                        activePlayer = foundNextSideChar;
+                        console.log("Karakter kontrolü Yan Karakter'e değiştirildi!");
+                    } else {
+                        console.log("Karakter değiştirme engellendi: Yan karakter bulunamadı veya görüş hattı yok.");
+                    }
                 } else {
-                    console.log("Karakter değiştirme engellendi: Arada engel var veya doğrudan görüş hattı yok.");
+                    // Yan karakterden ana karaktere geri dön
+                    activePlayer = player;
+                    console.log("Karakter kontrolü Ana Karakter'e değiştirildi!");
+                }
+                
+                // Kontrol değiştiğinde karakterlerin dikey hızlarını sıfırla
+                for (let i = 0; i < allPlayableCharacters.length; i++) {
+                    allPlayableCharacters[i].dy = 0;
+                    allPlayableCharacters[i].isOnGround = false;
                 }
                 lastZPressTime = currentTime; // Cooldown'u güncelle
+            }
+
+            // --- Otomatik Kontrol Geri Dönüşü (Yan Karakter Görüş Alanından Çıkarsa) ---
+            // Eğer aktif karakter ana karakter değilse (yani bir yan karakterse)
+            if (activePlayer !== player) {
+                // Ve ana karakterle görüş hattı yoksa
+                if (!checkLineOfSight(player, activePlayer)) {
+                    activePlayer = player;
+                    console.log("Yan karakter görüş alanından çıktı, kontrol Ana Karakter'e geri döndürüldü!");
+                    // Geri dönüşte de fizik sıfırlanabilir, karakterin havada kalmaması için
+                    for (let i = 0; i < allPlayableCharacters.length; i++) {
+                        allPlayableCharacters[i].dy = 0;
+                        allPlayableCharacters[i].isOnGround = false;
+                    }
+                }
             }
 
             // --- Çıkış Kapısı Kontrolü (Ana Karakter İçin) ---
@@ -472,130 +588,179 @@ if (canvas) {
         function draw() {
             ctx.clearRect(0, 0, canvas.width, canvas.height);
 
-            // Mevcut seviye indexine göre doğru arka planı çiz
-            let currentBackgroundImage;
-            if (currentLevelIndex === 0) {
-                currentBackgroundImage = backgroundImage; // seviye1.png
-            } else if (currentLevelIndex === 1) {
-                currentBackgroundImage = seviye2Image; // seviye2.png
-            }
-            // Daha fazla seviyeniz olursa buraya else if ekleyebilirsiniz
-
-            if (currentBackgroundImage && currentBackgroundImage.complete && currentBackgroundImage.naturalWidth !== 0) {
-                ctx.drawImage(currentBackgroundImage, 0, 0, canvas.width, canvas.height);
-            } else {
-                ctx.fillStyle = '#87CEEB'; // Görsel yüklenmezse varsayılan gökyüzü rengi
-                ctx.fillRect(0, 0, canvas.width, canvas.height);
-            }
-
-
-            for (let row = 0; row < level.length; row++) {
-                for (let col = 0; col < level[row].length; col++) {
-                    const tileType = level[row][col];
-                    const x = col * tileSize;
-                    const y = row * tileSize;
-
-                    // Kapı çizimi (red_door)
-                    if (tileType === 'D') {
-                        door.x = x;
-                        door.y = y;
-
-                        if (door.isOpen) {
-                            if (doorOpenImage.complete && doorOpenImage.naturalWidth !== 0) {
-                                ctx.drawImage(doorOpenImage, x, y, doorOpenImage.naturalWidth, doorOpenImage.naturalHeight);
-                            } else {
-                                ctx.fillStyle = 'green';
-                                ctx.fillRect(x, y + tileSize - 5, tileSize, 5);
-                            }
-                        } else {
-                            if (doorClosedImage.complete && doorClosedImage.naturalWidth !== 0) {
-                                ctx.drawImage(doorClosedImage, x, y, door.width, door.height);
-                            } else {
-                                ctx.fillStyle = 'darkred';
-                                ctx.fillRect(x, y, tileSize, tileSize * 2);
-                            }
-                        }
-                    }
-                    // Kapının alt bloğu (görselin devamı, çarpışma yok)
-                    else if (tileType === 'd') {
-                        // Bu bloğa herhangi bir çizim yapmayız, sadece D bloğu kapının tamamını çizer.
-                    }
-                    // Buton çizimi
-                    else if (tileType === 'B') {
-                        button.x = x;
-                        button.y = y;
-
-                        if (button.isPressed) {
-                            if (buttonPressedImage.complete && buttonPressedImage.naturalWidth !== 0) {
-                                ctx.drawImage(buttonPressedImage, x, y + tileSize - buttonPressedImage.naturalHeight, buttonPressedImage.naturalWidth, buttonPressedImage.naturalHeight);
-                            } else {
-                                ctx.fillStyle = 'lightgray';
-                                ctx.fillRect(x, y + tileSize - 3, tileSize, 3);
-                            }
-                        } else {
-                            if (buttonNormalImage.complete && buttonNormalImage.naturalWidth !== 0) {
-                                ctx.drawImage(buttonNormalImage, x, y + tileSize - buttonNormalImage.naturalHeight, buttonNormalImage.naturalWidth, buttonNormalImage.naturalHeight);
-                            } else {
-                                ctx.fillStyle = 'gray';
-                                ctx.fillRect(x, y + tileSize - 15, tileSize, 15);
-                            }
-                        }
-                    }
-                    // Çıkış Kapısı çizimi
-                    else if (tileType === 'X') {
-                        exitDoor.x = x; // Çıkış kapısının konumunu güncelle
-                        exitDoor.y = y; // Çıkış kapısının konumunu güncelle
-                        if (exitDoorImage.complete && exitDoorImage.naturalWidth !== 0) {
-                            ctx.drawImage(exitDoorImage, x, y, exitDoor.width, exitDoor.height);
-                        } else {
-                            ctx.fillStyle = 'orange'; // Yedek renk
-                            ctx.fillRect(x, y, exitDoor.width, exitDoor.height);
-                        }
-                    }
-                    // Yeni parmaklık çizimi 1
-                    else if (tileType === 'F') {
-                        if (grayFenceImage.complete && grayFenceImage.naturalWidth !== 0) {
-                            ctx.drawImage(grayFenceImage, x, y, tileSize, tileSize);
-                        } else {
-                            ctx.fillStyle = 'darkgray'; // Yedek renk
-                            ctx.fillRect(x, y, tileSize, tileSize);
-                        }
-                    }
-                    // Yeni parmaklık çizimi 2
-                    else if (tileType === 'G') {
-                        if (grayFence2Image.complete && grayFence2Image.naturalWidth !== 0) {
-                            ctx.drawImage(grayFence2Image, x, y, tileSize, tileSize);
-                        } else {
-                            ctx.fillStyle = 'lightgray'; // Yedek renk
-                            ctx.fillRect(x, y, tileSize, tileSize);
-                        }
-                    }
-                    // 'P' ve 'Q' karakterleri başlangıçta boşlukla değiştirildiği için burada çizilmeyecekler.
+            if (gameState === 'startScreen') {
+                // Giriş ekranını çiz
+                if (startScreenImage.complete && startScreenImage.naturalWidth !== 0) {
+                    ctx.drawImage(startScreenImage, 0, 0, canvas.width, canvas.height);
+                } else {
+                    // Eğer görsel yüklenmezse varsayılan bir arka plan ve yazı göster
+                    ctx.fillStyle = 'black';
+                    ctx.fillRect(0, 0, canvas.width, canvas.height);
+                    ctx.fillStyle = 'white';
+                    ctx.font = '30px Arial';
+                    ctx.textAlign = 'center';
+                    ctx.fillText('Oyuna Başlamak İçin Enter\'a Basın', canvas.width / 2, canvas.height / 2);
+                }
+            } else if (gameState === 'howToPlayScreen') {
+                // Nasıl oynanır ekranını çiz
+                if (howToPlayImage.complete && howToPlayImage.naturalWidth !== 0) {
+                    ctx.drawImage(howToPlayImage, 0, 0, canvas.width, canvas.height);
+                } else {
+                    ctx.fillStyle = 'darkblue';
+                    ctx.fillRect(0, 0, canvas.width, canvas.height);
+                    ctx.fillStyle = 'white';
+                    ctx.font = '30px Arial';
+                    ctx.textAlign = 'center';
+                    ctx.fillText('Nasıl Oynanır?', canvas.width / 2, canvas.height / 2 - 40);
+                    ctx.font = '20px Arial';
+                    ctx.fillText('Ok tuşları ile hareket et, Yukarı ok ile zıpla.', canvas.width / 2, canvas.height / 2);
+                    ctx.fillText('Z tuşu ile karakter değiştir.', canvas.width / 2, canvas.height / 2 + 30);
+                    ctx.fillText('Oyuna başlamak için Enter\'a basın.', canvas.width / 2, canvas.height / 2 + 60);
                 }
             }
+            else if (gameState === 'playing') {
+                // Mevcut seviye indexine göre doğru arka planı çiz
+                let currentBackgroundImage;
+                if (currentLevelIndex === 0) {
+                    currentBackgroundImage = backgroundImage; // seviye1.png
+                } else if (currentLevelIndex === 1) {
+                    currentBackgroundImage = seviye2Image; // seviye2.png
+                }
+                // Daha fazla seviyeniz olursa buraya else if ekleyebilirsiniz
 
-            // Oyuncuları çizme kısmı
-            if (playerImage.complete && playerImage.naturalWidth !== 0) {
-                ctx.drawImage(playerImage, player.x, player.y, player.width, player.height);
-            } else {
-                ctx.fillStyle = 'blue';
-                ctx.fillRect(player.x, player.y, player.width, player.height);
-            }
+                if (currentBackgroundImage && currentBackgroundImage.complete && currentBackgroundImage.naturalWidth !== 0) {
+                    ctx.drawImage(currentBackgroundImage, 0, 0, canvas.width, canvas.height);
+                } else {
+                    ctx.fillStyle = '#87CEEB'; // Görsel yüklenmezse varsayılan gökyüzü rengi
+                    ctx.fillRect(0, 0, canvas.width, canvas.height);
+                }
 
-            if (player2Image.complete && player2Image.naturalWidth !== 0) {
-                ctx.drawImage(player2Image, player2.x, player2.y, player2.width, player2.height);
-            } else {
-                ctx.fillStyle = 'purple'; // Player 2 için yedek renk
-                ctx.fillRect(player2.x, player2.y, player2.width, player2.height);
-            }
 
-            // Aktif oyuncunun etrafına çerçeve çiz
-            ctx.strokeStyle = 'yellow'; // Çerçeve rengi
-            ctx.lineWidth = 3; // Çerçeve kalınlığı
-            if (activePlayer === player) {
-                ctx.strokeRect(player.x, player.y, player.width, player.height);
-            } else {
-                ctx.strokeRect(player2.x, player2.y, player2.width, player2.height);
+                for (let row = 0; row < level.length; row++) {
+                    for (let col = 0; col < level[row].length; col++) {
+                        const tileType = level[row][col];
+                        const x = col * tileSize;
+                        const y = row * tileSize;
+
+                        // Kapı çizimi (red_door)
+                        if (tileType === 'D') {
+                            door.x = x;
+                            door.y = y;
+
+                            if (door.isOpen) {
+                                if (doorOpenImage.complete && doorOpenImage.naturalWidth !== 0) {
+                                    ctx.drawImage(doorOpenImage, x, y, doorOpenImage.naturalWidth, doorOpenImage.naturalHeight);
+                                } else {
+                                    ctx.fillStyle = 'green';
+                                    ctx.fillRect(x, y + tileSize - 5, tileSize, 5);
+                                }
+                            } else {
+                                if (doorClosedImage.complete && doorClosedImage.naturalWidth !== 0) {
+                                    ctx.drawImage(doorClosedImage, x, y, door.width, door.height);
+                                } else {
+                                    ctx.fillStyle = 'darkred';
+                                    ctx.fillRect(x, y, tileSize, tileSize * 2);
+                                }
+                            }
+                        }
+                        // Kapının alt bloğu (görselin devamı, çarpışma yok)
+                        else if (tileType === 'd') {
+                            // Bu bloğa herhangi bir çizim yapmayız, sadece D bloğu kapının tamamını çizer.
+                        }
+                        // Buton çizimi
+                        else if (tileType === 'B') {
+                            button.x = x;
+                            button.y = y;
+
+                            if (button.isPressed) {
+                                if (buttonPressedImage.complete && buttonPressedImage.naturalWidth !== 0) {
+                                    ctx.drawImage(buttonPressedImage, x, y + tileSize - buttonPressedImage.naturalHeight, buttonPressedImage.naturalWidth, buttonPressedImage.naturalHeight);
+                                } else {
+                                    ctx.fillStyle = 'lightgray';
+                                    ctx.fillRect(x, y + tileSize - 3, tileSize, 3);
+                                }
+                            } else {
+                                if (buttonNormalImage.complete && buttonNormalImage.naturalWidth !== 0) {
+                                    ctx.drawImage(buttonNormalImage, x, y + tileSize - buttonNormalImage.naturalHeight, buttonNormalImage.naturalWidth, buttonNormalImage.naturalHeight);
+                                } else {
+                                    ctx.fillStyle = 'gray';
+                                    ctx.fillRect(x, y + tileSize - 15, tileSize, 15);
+                                }
+                            }
+                        }
+                        // Çıkış Kapısı çizimi
+                        else if (tileType === 'X') {
+                            exitDoor.x = x; // Çıkış kapısının konumunu güncelle
+                            exitDoor.y = y; // Çıkış kapısının konumunu güncelle
+                            if (exitDoorImage.complete && exitDoorImage.naturalWidth !== 0) {
+                                ctx.drawImage(exitDoorImage, x, y, exitDoor.width, exitDoor.height);
+                            } else {
+                                ctx.fillStyle = 'orange'; // Yedek renk
+                                ctx.fillRect(x, y, exitDoor.width, exitDoor.height);
+                            }
+                        }
+                        // Yeni parmaklık çizimi 1
+                        else if (tileType === 'F') {
+                            if (grayFenceImage.complete && grayFenceImage.naturalWidth !== 0) {
+                                ctx.drawImage(grayFenceImage, x, y, tileSize, tileSize);
+                            } else {
+                                ctx.fillStyle = 'darkgray'; // Yedek renk
+                                ctx.fillRect(x, y, tileSize, tileSize);
+                            }
+                        }
+                        // Yeni parmaklık çizimi 2
+                        else if (tileType === 'G') {
+                            if (grayFence2Image.complete && grayFence2Image.naturalWidth !== 0) {
+                                ctx.drawImage(grayFence2Image, x, y, tileSize, tileSize);
+                            } else {
+                                ctx.fillStyle = 'lightgray'; // Yedek renk
+                                ctx.fillRect(x, y, tileSize, tileSize);
+                            }
+                        }
+                        // 'P' ve 'Q' karakterleri başlangıçta boşlukla değiştirildiği için burada çizilmeyecekler.
+                    }
+                }
+
+                // Oyuncuları çizme kısmı
+                for (let i = 0; i < allPlayableCharacters.length; i++) {
+                    const char = allPlayableCharacters[i];
+                    let charImage;
+                    if (char === player) {
+                        charImage = playerImage;
+                    } else { // Diğer tüm karakterler (Q'lar) yan karakter görselini kullanır
+                        charImage = sideCharacterImage; 
+                    }
+
+                    if (charImage.complete && charImage.naturalWidth !== 0) {
+                        ctx.drawImage(charImage, char.x, char.y, char.width, char.height);
+                    } else {
+                        ctx.fillStyle = (char === player) ? 'blue' : 'purple'; // Yedek renk
+                        ctx.fillRect(char.x, char.y, char.width, char.height);
+                    }
+                }
+
+
+                // Aktif oyuncunun etrafına çerçeve çiz
+                ctx.strokeStyle = 'yellow'; // Çerçeve rengi
+                ctx.lineWidth = 3; // Çerçeve kalınlığı
+                if (activePlayer) { // activePlayer'ın null olmadığından emin ol
+                    ctx.strokeRect(activePlayer.x, activePlayer.y, activePlayer.width, activePlayer.height);
+                }
+            } else if (gameState === 'pauseMenu') {
+                // Menü ekranını çiz
+                if (menuImage.complete && menuImage.naturalWidth !== 0) {
+                    ctx.drawImage(menuImage, 0, 0, canvas.width, canvas.height);
+                } else {
+                    ctx.fillStyle = 'rgba(0, 0, 0, 0.7)'; // Yarı saydam siyah arka plan
+                    ctx.fillRect(0, 0, canvas.width, canvas.height);
+                    ctx.fillStyle = 'white';
+                    ctx.font = '40px Arial';
+                    ctx.textAlign = 'center';
+                    ctx.fillText('OYUN DURAKLATILDI', canvas.width / 2, canvas.height / 2 - 60);
+                    ctx.font = '25px Arial';
+                    ctx.fillText('1 - Devam Et', canvas.width / 2, canvas.height / 2);
+                    ctx.fillText('2 - Seviyeyi Baştan Başlat', canvas.width / 2, canvas.height / 2 + 40);
+                }
             }
         }
 
@@ -605,17 +770,18 @@ if (canvas) {
                 return;
             }
 
-            update(); // Oyun durumunu güncelle
-            draw();   // Oyun alanını çiz
+            // Duruma göre farklı fonksiyonları çağır
+            if (gameState === 'playing') {
+                update(); // Sadece 'playing' durumunda güncelleme yap
+            }
+            draw(); // Her durumda çizim yap
 
             requestAnimationFrame(gameLoop);
         }
 
         // =========== OYUN BAŞLANGICI ===========
-        // İlk seviyeyi yükle ve karakter konumlarını başlat
-        level = allLevels[currentLevelIndex].map(row => row);
-        initializeCharacterPositionsForCurrentLevel();
-
+        // Oyun döngüsü başlamadan önce karakterleri başlatma işlemini kaldırıldı.
+        // Bu işlem artık 'Enter' tuşuna basıldığında gerçekleşecek.
         gameLoop();
 
         // =========== DİĞER FONKSİYONLAR / DEĞİŞKENLER BURAYA GELECEK ===========
@@ -626,3 +792,5 @@ if (canvas) {
 } else {
     console.error('ID "ednaCanvas" olan canvas elementi bulunamadı! HTML dosyasını kontrol edin.');
 }
+
+
