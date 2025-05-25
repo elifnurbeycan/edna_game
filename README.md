@@ -56,7 +56,8 @@ Her bir pikselin özenle yerleştirildiği bu tasarımlar, oyunun retro ve minim
 Yapay zeka olarak gemini aracını belli kısımlarda kullandım fakat kendisi link vermediği için linkimi koyamadım. Geminiyi hata aldığım zamanlarda, hangi araçları kullanmam gerektiği konusunda kullandım.
 
 ## Oyunumdan Görseller 
-
+![](ekrangoruntusu/resim1.png)
+![](ekrangoruntusu/resim2.png)
 
 ## Youtube Video Linkim
 https://youtu.be/rAzIhuF6UAA
