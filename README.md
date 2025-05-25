@@ -52,6 +52,9 @@ Bu projenin görsel varlıkları (arka planlar, karakterler, objeler vb.) tamame
 
 Her bir pikselin özenle yerleştirildiği bu tasarımlar, oyunun retro ve minimalist estetiğini oluşturmada önemli bir rol oynamıştır.
 
+## Yapay Zeka Kullanımı
+Yapay zeka olarak gemini aracını belli kısımlarda kullandım fakat kendisi link vermediği için linkimi koyamadım. Geminiyi hata aldığım zamanlarda, hangi araçları kullanmam gerektiği konusunda kullandım.
+
 ## Oyunumdan Görseller 
 
 
