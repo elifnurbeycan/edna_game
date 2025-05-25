@@ -66,45 +66,46 @@ if (canvas) {
             [
                 "####################", // Satır 0 - Üst duvar/tavan
                 "####################", // Satır 1 - Üst duvar/tavan devamı
-                "##        #########", // Satır 2
-                "##          D    X #", // Satır 3 - Kapı (D), Çıkış Kapısı (X)
-                "#           d      #", // Satır 4
-                "#         ###########", // Satır 5
-                "#         ###########", // Satır 6
+                "##         #########", // Satır 2 - Çıkış Kapısı (X)
+                "##          D     X#", // Satır 3 - Kapı (D)
+                "#                  #", // Satır 4
+                "#        ###########", // Satır 5
+                "#        ###########", // Satır 6
                 "#     ##############", // Satır 7
-                "#     #######      #", // Satır 8
-                "#### P    F  Q   B #", // Satır 9 - Ana karakter (P), Yan karakter (Q), Parmaklık (F), Buton (B)
-                "####      F      ###", // Satır 10 - Parmaklık (F)
+                "#     #######      #", // Satır 8 - P, Q ve Aralarında Fences (F/G de kullanabilirsiniz)
+                "#### P      F  Q  B#", // Satır 9 - Buton (B)
+                "####        F    ###", // Satır 10
                 "####################"  // Satır 11 - En alt zemin/duvar
             ],
             // Seviye 2 (index 1) - Örnek bir seviye 2 düzeni, kendi tasarımınızı buraya çizebilirsiniz
             // Buraya birden fazla 'Q' ekleyerek test edebilirsiniz.
             [
                 "####################",
+                "####Q          #####",
+                "####           #####",
                 "######         #####",
-                "######        B#####",
-                "######   ###  #######",
-                "#        ###  #######",
-                "#        ###  #######",
-                "#        ###  #    X#",
-                "#Q     #####  #     #", // İlk Q
-                "#    P #####  D #####",
-                "####   #####  Q #####", // İkinci Q buraya eklendi
+                "#         #   B#####",
+                "#       ###  #######",
+                "#       ###  #######",
+                "#       ###  #    X#", 
+                "#Q    #####  #     #", 
+                "#    P#####  D #####", 
+                "####  #####    #####",
                 "####################"
             ],
             // Seviye 3 (index 2) - Buraya kendi seviye tasarımınızı çizin
             [
                 "####################",
-                "####           D2  X#",
-                "#                  #",
-                "#B1            ######",
-                "###  ##       D1   Q#",
-                "#Q               B2 #",
+                "###            D  X#",
+                "#Q                 #",
                 "#           ########",
-                "#####       ########",
+                "###   #       ######",
+                "#      ##       #####",
+                "#  #    ###       Q#",
                 "#####              #",
+                "#####       ########",
                 "#######           P#",
-                "#######            #",
+                "#######   B        #",
                 "####################"
             ]
         ];
