@@ -61,5 +61,7 @@ Yapay zeka olarak gemini aracını belli kısımlarda kullandım fakat kendisi l
 
 ## Youtube Video Linkim
 https://youtu.be/rAzIhuF6UAA
+## Değiştirdiğim Oyun
+https://kz.itch.io/edna
 
 
