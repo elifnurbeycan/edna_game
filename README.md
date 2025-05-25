@@ -43,12 +43,12 @@ Proje aşağıdaki temel dosya yapısına sahiptir:
 * muzikler 
 * resimler
 
-  ## Kullanılan Araçlar / Varlık Oluşturma
+## Kullanılan Araçlar / Varlık Oluşturma
 
 Bu projenin görsel varlıkları (arka planlar, karakterler, objeler vb.) tamamen tarafımdan tasarlanmış ve çizilmiştir. Bu süreçte aşağıdaki grafik tasarım uygulamaları kullanılmıştır:
 
-* **LibreSprite:** Pixel art görsellerinin çizimi, animasyonların oluşturulması ve düzenlenmesi için açık kaynaklı bir araçtır. Oyun içindeki tüm karakterler, etkileşimli objeler (kapılar, butonlar) ve parmaklıklar bu program kullanılarak titizlikle tasarlanmıştır.
-* **PixelApp:** Basit pixel art çizimleri ve hızlı prototipleme için kullanışlı bir online/çevrimdışı pixel art editörüdür. Özellikle bazı arka plan elementleri ve başlangıç/bitiş ekranı görselleri bu uygulama ile oluşturulmuştur.
+* **LibreSprite:** Pixel art görsellerinin çizimi, animasyonların oluşturulması ve düzenlenmesi için açık kaynaklı bir araçtır. Oyun içindeki tüm karakterler, etkileşimli objeler (kapılar, butonlar) ve parmaklıklar bu program kullanılarak tasarlanmıştır.
+* **PixelApp:** Basit pixel art çizimleri için kullanışlı bir pixel art editörüdür. Oyundaki ana ve yan karakterler, arka plan elementleri ve başlangıç ekranı görselleri bu uygulama ile oluşturulmuştur.
 
 Her bir pikselin özenle yerleştirildiği bu tasarımlar, oyunun retro ve minimalist estetiğini oluşturmada önemli bir rol oynamıştır.
 
