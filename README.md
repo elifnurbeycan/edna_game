@@ -38,13 +38,13 @@ Bu proje, JavaScript ve HTML Canvas kullanılarak geliştirilmiş, oyuncuların 
 ## Dosya Yapısı
 
 Proje aşağıdaki temel dosya yapısına sahiptir:
-* index.html
-* ednaGame.js
-* muzikler
+** index.html
+** ednaGame.js
+** muzikler
 * * jump.mp3
   * oyunmuzik.mp3
   * walkingsound.mp3
-* resimler
+** resimler
 * *ana_karakter.png
 * yan_karakter.png
 * cikis_kapi.png
