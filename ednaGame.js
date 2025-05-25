@@ -12,13 +12,13 @@ if (canvas) {
         // =========== OYUN OBJELERİ / DEĞİŞKENLERİ ===========
         const tileSize = 40; // Her bir blok/karenin piksel boyutu
 
-        // Karakter şablonu
+        // Karakter şablonu (varsayılan ana karakter boyutları için)
         function createCharacter(x, y) {
             return {
                 x: x,
                 y: y,
                 width: 40,
-                height: 70,
+                height: 70, // Varsayılan karakter yüksekliği (ana karakter için)
                 speed: 3,
                 dy: 0,
                 gravity: 0.5,
@@ -66,31 +66,45 @@ if (canvas) {
             [
                 "####################", // Satır 0 - Üst duvar/tavan
                 "####################", // Satır 1 - Üst duvar/tavan devamı
-                "##         #########", // Satır 2 - Çıkış Kapısı (X)
-                "##          D     X#", // Satır 3 - Kapı (D)
+                "##        #########", // Satır 2
+                "##          D    X #", // Satır 3 - Kapı (D), Çıkış Kapısı (X)
                 "#           d      #", // Satır 4
-                "#        ###########", // Satır 5
-                "#        ###########", // Satır 6
+                "#         ###########", // Satır 5
+                "#         ###########", // Satır 6
                 "#     ##############", // Satır 7
-                "#     #######      #", // Satır 8 - P, Q ve Aralarında Fences (F/G de kullanabilirsiniz)
-                "#### P      F  Q  B#", // Satır 9 - Buton (B)
-                "####        F    ###", // Satır 10
+                "#     #######      #", // Satır 8
+                "#### P    F  Q   B #", // Satır 9 - Ana karakter (P), Yan karakter (Q), Parmaklık (F), Buton (B)
+                "####      F      ###", // Satır 10 - Parmaklık (F)
                 "####################"  // Satır 11 - En alt zemin/duvar
             ],
             // Seviye 2 (index 1) - Örnek bir seviye 2 düzeni, kendi tasarımınızı buraya çizebilirsiniz
             // Buraya birden fazla 'Q' ekleyerek test edebilirsiniz.
             [
                 "####################",
-                "####Q          #####",
-                "####           #####",
                 "######         #####",
-                "#         #   B#####",
-                "#       ###  #######",
-                "#       ###  #######",
-                "#       ###  #    X#", 
-                "#Q    #####  #     #", 
-                "#    P#####  D #####", 
-                "####  #####    #####",
+                "######        B#####",
+                "######   ###  #######",
+                "#        ###  #######",
+                "#        ###  #######",
+                "#        ###  #    X#",
+                "#Q     #####  #     #", // İlk Q
+                "#    P #####  D #####",
+                "####   #####  Q #####", // İkinci Q buraya eklendi
+                "####################"
+            ],
+            // Seviye 3 (index 2) - Buraya kendi seviye tasarımınızı çizin
+            [
+                "####################",
+                "####           D2  X#",
+                "#                  #",
+                "#B1            ######",
+                "###  ##       D1   Q#",
+                "#Q               B2 #",
+                "#           ########",
+                "#####       ########",
+                "#####              #",
+                "#######           P#",
+                "#######            #",
                 "####################"
             ]
         ];
@@ -126,7 +140,12 @@ if (canvas) {
                         player = newPlayer; // Ana karakter referansını ata
                         tempLevelRows[row][col] = ' '; // Başlangıç noktasını boşluk yap
                     } else if (tileChar === 'Q') {
-                        const newSideCharacter = createCharacter(x, y - createCharacter().height + tileSize - 1);
+                        // Yan karakter için özel boyutlar
+                        const newSideCharacter = createCharacter(x, y); // Varsayılan y ile oluştur
+                        newSideCharacter.width = 40; // Ördek genişliği
+                        newSideCharacter.height = 50; // Ördek yüksekliği
+                        // Yüksekliğe göre y konumunu ayarla
+                        newSideCharacter.y = y - newSideCharacter.height + tileSize - 1;
                         allPlayableCharacters.push(newSideCharacter);
                         tempLevelRows[row][col] = ' '; // Başlangıç noktasını boşluk yap
                     }
@@ -141,7 +160,7 @@ if (canvas) {
                 allPlayableCharacters.unshift(player); // Listenin başına ekle
                 console.warn("Ana karakter (P) seviyede bulunamadı, varsayılan konuma yerleştirildi.");
             }
-            
+
             activePlayer = player; // Seviye değişiminde kontrolü her zaman player 1'e geri ver
         }
 
@@ -162,14 +181,14 @@ if (canvas) {
         }
 
 
-        // =========== GÖRSEL KAYNAKLARI YÜKLEME ===========
+        // =========== GÖRSEL VE SES KAYNAKLARI YÜKLEME ===========
         const playerImage = new Image();
         playerImage.src = 'resimler/ana_karakter.png';
         playerImage.onload = () => console.log('Ana karakter piksel görseli başarıyla yüklendi!');
         playerImage.onerror = () => console.error('Ana karakter piksel görseli yüklenemedi! Dosya yolunu veya adını kontrol edin: ' + playerImage.src);
 
         const sideCharacterImage = new Image(); // Tüm yan karakterler için tek görsel
-        sideCharacterImage.src = 'resimler/yan_karakter.png';
+        sideCharacterImage.src = 'resimler/ordek.png';
         sideCharacterImage.onload = () => console.log('Yan karakter piksel görseli başarıyla yüklendi!');
         sideCharacterImage.onerror = () => console.error('Yan karakter piksel görseli yüklenemedi! Dosya yolunu veya adını kontrol edin: ' + sideCharacterImage.src);
 
@@ -182,6 +201,11 @@ if (canvas) {
         seviye2Image.src = 'resimler/seviye2.png';
         seviye2Image.onload = () => console.log('Seviye 2 arka plan görseli başarıyla yüklendi!');
         seviye2Image.onerror = () => console.error('Seviye 2 arka plan görseli yüklenemedi! Dosya yolunu veya adını kontrol edin: ' + seviye2Image.src);
+
+        const seviye3Image = new Image(); // Seviye 3 arka plan görseli <-- YENİ EKLENDİ!
+        seviye3Image.src = 'resimler/seviye3.png';
+        seviye3Image.onload = () => console.log('Seviye 3 arka plan görseli başarıyla yüklendi!');
+        seviye3Image.onerror = () => console.error('Seviye 3 arka plan görseli yüklenemedi! Dosya yolunu veya adını kontrol edin: ' + seviye3Image.src);
 
         const startScreenImage = new Image(); // Giriş ekranı görseli
         startScreenImage.src = 'resimler/giris_ekrani.png';
@@ -234,6 +258,45 @@ if (canvas) {
         grayFence2Image.onload = () => console.log('Gri parmaklık 2 görseli başarıyla yüklendi!');
         grayFence2Image.onerror = () => console.error('Gri parmaklık 2 görseli yüklenemedi! Dosya yolunu veya adını kontrol edin: ' + grayFence2Image.src);
 
+        // Arka plan müziği objesi
+        const backgroundMusic = new Audio();
+        backgroundMusic.src = 'muzikler/oyunmuzik.mp3';
+        backgroundMusic.loop = true; // Müziğin sürekli döngüde çalmasını sağlar
+        backgroundMusic.volume = 0.3; // Ses seviyesini ayarlayın (0.0 ile 1.0 arası)
+
+        // Müzik yüklendiğinde konsola bilgi yazdır
+        backgroundMusic.oncanplaythrough = () => {
+            console.log('Arka plan müziği başarıyla yüklendi ve çalmaya hazır!');
+        };
+        backgroundMusic.onerror = (e) => {
+            console.error('Arka plan müziği yüklenemedi! Dosya yolunu veya adını kontrol edin: ' + backgroundMusic.src, e);
+        };
+
+        // Yürüme sesi efekti
+        const walkingSound = new Audio();
+        walkingSound.src = 'muzikler/walkingsound.mp3';
+        walkingSound.loop = true; // Yürüme sesi sürekli çalmalı (karakter yürüdüğü sürece)
+        walkingSound.volume = 0.5; // Ses seviyesini ayarlayın
+
+        walkingSound.oncanplaythrough = () => {
+            console.log('Yürüme sesi başarıyla yüklendi ve çalmaya hazır!');
+        };
+        walkingSound.onerror = (e) => {
+            console.error('Yürüme sesi yüklenemedi! Dosya yolunu veya adını kontrol edin: ' + walkingSound.src, e);
+        };
+
+        // Zıplama sesi efekti
+        const jumpSound = new Audio();
+        jumpSound.src = 'muzikler/jump.mp3'; // Zıplama sesi dosyanızın yolu
+        jumpSound.volume = 0.7; // Ses seviyesini ayarlayın (döngüye almayın, her zıplamada bir kez çalmalı)
+
+        jumpSound.oncanplaythrough = () => {
+            console.log('Zıplama sesi başarıyla yüklendi ve çalmaya hazır!');
+        };
+        jumpSound.onerror = (e) => {
+            console.error('Zıplama sesi yüklenemedi! Dosya yolunu veya adını kontrol edin: ' + jumpSound.src, e);
+        };
+
 
         // =========== KLAVYE GİRDİ YÖNETİMİ ===========
         let pressedKeys = {};
@@ -257,18 +320,44 @@ if (canvas) {
                     level = allLevels[currentLevelIndex].map(row => row);
                     initializeCharacterPositionsForCurrentLevel();
                     console.log("Oyun başladı, Seviye 1 yüklendi!");
+
+                    // MÜZİĞİ BURADA BAŞLAT
+                    backgroundMusic.play()
+                        .then(() => {
+                            console.log("Müzik başarıyla çalmaya başladı.");
+                        })
+                        .catch(error => {
+                            console.error("Müzik çalma hatası (kullanıcı etkileşimi gerekebilir veya dosya hatası):", error);
+                        });
                 }
             } else if (e.code === 'Escape') {
                 if (gameState === 'playing') {
                     gameState = 'pauseMenu';
+                    backgroundMusic.pause(); // Oyunu duraklattığında müziği de durdur
+                    walkingSound.pause(); // Yürüme sesini durdur
+                    walkingSound.currentTime = 0; // Yürüme sesini sıfırla
                     console.log("Oyun duraklatıldı, Menü açıldı.");
                 } else if (gameState === 'pauseMenu') {
                     gameState = 'playing'; // Esc ile menüden oyuna dön
+                    backgroundMusic.play()
+                        .then(() => {
+                            console.log("Müzik devam ettirildi.");
+                        })
+                        .catch(error => {
+                            console.error("Müzik çalma hatası (devam etmede):", error);
+                        });
                     console.log("Menü kapatıldı, Oyuna devam ediliyor.");
                 }
             } else if (e.code === 'Digit1' && gameState === 'pauseMenu') {
                 // Menüde 1'e basılırsa oyuna devam et
                 gameState = 'playing';
+                backgroundMusic.play()
+                    .then(() => {
+                        console.log("Müzik devam ettirildi (menüden).");
+                    })
+                    .catch(error => {
+                        console.error("Müzik çalma hatası (devam etmede):", error);
+                    });
                 console.log("Oyuna devam ediliyor.");
             } else if (e.code === 'Digit2' && gameState === 'pauseMenu') {
                 // Menüde 2'ye basılırsa seviyeyi baştan başlat
@@ -278,6 +367,16 @@ if (canvas) {
                 initializeCharacterPositionsForCurrentLevel(); // Karakter konumlarını sıfırla
                 door.isOpen = false; // Kapıyı sıfırla
                 button.isPressed = false; // Butonu sıfırla
+                backgroundMusic.currentTime = 0; // Müziği baştan başlat
+                backgroundMusic.play()
+                    .then(() => {
+                        console.log("Müzik baştan başlatıldı (seviye yeniden başlatma).");
+                    })
+                    .catch(error => {
+                        console.error("Müzik çalma hatası (seviye yeniden başlatmada):", error);
+                    });
+                walkingSound.pause(); // Yürüme sesini durdur
+                walkingSound.currentTime = 0; // Yürüme sesini sıfırla
                 console.log(`Seviye ${currentLevelIndex + 1} baştan başlatıldı.`);
             }
         });
@@ -360,7 +459,7 @@ if (canvas) {
 
                 // Hedef tile'a ulaşıldıysa döngüyü kır
                 if (Math.floor(currentX / tileSize) === Math.floor(x2 / tileSize) && Math.floor(currentY / tileSize) === Math.floor(y2 / tileSize)) {
-                    break; 
+                    break;
                 }
 
                 let e2 = 2 * err;
@@ -460,12 +559,27 @@ if (canvas) {
 
             // Sadece aktif oyuncunun yatay hareketini al
             let prevCurrentPlayerX = currentPlayer.x;
+            let isMovingHorizontally = false; // Yatay hareket kontrolü için yeni değişken
+
             if (pressedKeys['ArrowLeft']) {
                 currentPlayer.x -= currentPlayer.speed;
+                isMovingHorizontally = true;
             }
             if (pressedKeys['ArrowRight']) {
                 currentPlayer.x += currentPlayer.speed;
+                isMovingHorizontally = true;
             }
+
+            // Yürüme sesini kontrol et
+            if (isMovingHorizontally && currentPlayer.isOnGround && walkingSound.paused) {
+                walkingSound.play().catch(error => {
+                    console.error("Yürüme sesi çalma hatası:", error);
+                });
+            } else if ((!isMovingHorizontally || !currentPlayer.isOnGround) && !walkingSound.paused) {
+                walkingSound.pause();
+                walkingSound.currentTime = 0; // Ses dosyasını baştan başlat
+            }
+
 
             // Aktif oyuncunun yatay çarpışma kontrolü
             for (let row = 0; row < level.length; row++) {
@@ -485,6 +599,14 @@ if (canvas) {
             if (pressedKeys['ArrowUp'] && currentPlayer.isOnGround) {
                 currentPlayer.dy = currentPlayer.jumpPower;
                 currentPlayer.isOnGround = false;
+                walkingSound.pause(); // Zıplayınca yürüme sesini durdur
+                walkingSound.currentTime = 0;
+
+                // Zıplama sesini çal
+                jumpSound.currentTime = 0; // Sesin baştan başlamasını sağla
+                jumpSound.play().catch(error => {
+                    console.error("Zıplama sesi çalma hatası:", error);
+                });
             }
 
             // Her karakterin fizik ve çarpışma güncellemelerini uygula
@@ -552,12 +674,14 @@ if (canvas) {
                     activePlayer = player;
                     console.log("Karakter kontrolü Ana Karakter'e değiştirildi!");
                 }
-                
+
                 // Kontrol değiştiğinde karakterlerin dikey hızlarını sıfırla
                 for (let i = 0; i < allPlayableCharacters.length; i++) {
                     allPlayableCharacters[i].dy = 0;
                     allPlayableCharacters[i].isOnGround = false;
                 }
+                walkingSound.pause(); // Karakter değişince yürüme sesini durdur
+                walkingSound.currentTime = 0;
                 lastZPressTime = currentTime; // Cooldown'u güncelle
             }
 
@@ -573,6 +697,8 @@ if (canvas) {
                         allPlayableCharacters[i].dy = 0;
                         allPlayableCharacters[i].isOnGround = false;
                     }
+                    walkingSound.pause(); // Kontrol değişince yürüme sesini durdur
+                    walkingSound.currentTime = 0;
                 }
             }
 
@@ -581,6 +707,8 @@ if (canvas) {
             if (checkCollision(player, exitDoor)) {
                 console.log("Ana karakter çıkış kapısına değdi!");
                 transitionToNextLevel(); // Seviye geçişini tetikle
+                walkingSound.pause(); // Seviye değişince yürüme sesini durdur
+                walkingSound.currentTime = 0;
             }
         } // update() fonksiyonunun kapanış parantezi
 
@@ -625,6 +753,8 @@ if (canvas) {
                     currentBackgroundImage = backgroundImage; // seviye1.png
                 } else if (currentLevelIndex === 1) {
                     currentBackgroundImage = seviye2Image; // seviye2.png
+                } else if (currentLevelIndex === 2) { // <-- YENİ EKLENDİ!
+                    currentBackgroundImage = seviye3Image; // seviye3.png
                 }
                 // Daha fazla seviyeniz olursa buraya else if ekleyebilirsiniz
 
@@ -728,7 +858,7 @@ if (canvas) {
                     if (char === player) {
                         charImage = playerImage;
                     } else { // Diğer tüm karakterler (Q'lar) yan karakter görselini kullanır
-                        charImage = sideCharacterImage; 
+                        charImage = sideCharacterImage;
                     }
 
                     if (charImage.complete && charImage.naturalWidth !== 0) {
@@ -792,5 +922,3 @@ if (canvas) {
 } else {
     console.error('ID "ednaCanvas" olan canvas elementi bulunamadı! HTML dosyasını kontrol edin.');
 }
-
-
