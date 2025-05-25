@@ -53,7 +53,7 @@ Bu projenin görsel varlıkları (arka planlar, karakterler, objeler vb.) tamame
 Her bir pikselin özenle yerleştirildiği bu tasarımlar, oyunun retro ve minimalist estetiğini oluşturmada önemli bir rol oynamıştır.
 
 
-#Youtube Video Linkim
+## Youtube Video Linkim
 https://youtu.be/rAzIhuF6UAA
 
 
